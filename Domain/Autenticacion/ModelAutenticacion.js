@@ -3,7 +3,8 @@ class ModelSecurity {
     _id,
     correo,
     password,
-    usuario_id 
+    usuario_id,
+    
   ) {
     this._id = _id;
     this.correo = correo;
