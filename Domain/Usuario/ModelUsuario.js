@@ -5,6 +5,8 @@ class ModelUsuario {
     nombre,
     apellido,
     telefono,
+    correo,
+    contrasena,
     rol 
   ) {
     this._id = _id;
@@ -12,6 +14,8 @@ class ModelUsuario {
     this.nombre = nombre;
     this.apellido = apellido;
     this.telefono = telefono;
+    this.correo = correo;
+    this.contrasena = contrasena; 
     this.rol = rol;
   }
 }

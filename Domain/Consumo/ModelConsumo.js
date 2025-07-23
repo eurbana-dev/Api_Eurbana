@@ -1,4 +1,4 @@
-class ModelRegistroSensor {
+class ModelConsumoSensor {
 	constructor(
 		_id,
 		luminaria_id,
@@ -16,7 +16,7 @@ class ModelRegistroSensor {
 	}
 }
 
-module.exports = { ModelRegistroSensor };
+module.exports = { ModelConsumoSensor };
 
 /**
  * Registro de datos de sensores por minuto para luminaria
