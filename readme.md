@@ -1,6 +1,6 @@
 # 🌟 API EUrbana - Sistema de Gestión de Luminarias Urbanas
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)
 ![Node](https://img.shields.io/badge/node-%3E%3D16.0.0-brightgreen.svg)
 ![MongoDB](https://img.shields.io/badge/mongodb-%3E%3D5.0-green.svg)
 
