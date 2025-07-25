@@ -21,8 +21,6 @@ Infrastructure/
 │   └── InfrastructureLuminaria.js
 ├── Mantenimiento/
 │   └── InfrastructureMantenimiento.js
-├── Middleware/
-│   └── AuthMiddleware.js
 ├── Usuario/
 │   └── InfrastructureUsuario.js
 └── Infrastructure.md
@@ -139,16 +137,6 @@ Cada subcarpeta representa un módulo funcional de la plataforma.
 - `estatus`: Estado actual del mantenimiento (ej. pendiente, completado).
 - `observaciones`: Comentarios o notas relevantes.
 - `tipo_mantenimiento`: Clasificación (preventivo, correctivo, etc.).
-
----
-
-
-###  `Middleware/`
-- **Archivo:** `AuthMiddleware.js`
-- **Responsabilidad:** Middleware de autenticación para proteger rutas.
-- **Funciones típicas:**
-  - Validar el token JWT de las cabeceras.
-  - Adjuntar los datos del usuario autenticado a `req.usuario`.
 
 ---
 
