@@ -23,7 +23,8 @@ const mantenimientoRouter = require('../Presentation/Mantenimiento/PresentationM
 // Configuración del servidor
 const app = express();
 const PORT = process.env.PORT || 3000;
-const HOST = process.env.HOST || 'localhost';
+// Cambiado a 0.0.0.0 para aceptar conexiones externas
+const HOST = process.env.HOST || '0.0.0.0';
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
 // Configuración de CORS
