@@ -116,7 +116,7 @@ const infraMantenimiento = new InfrastructureMantenimiento();
 
 /**
  * @swagger
- * /api/mantenimientos:
+ * /api/mantenimiento:
  *   get:
  *     summary: Obtener todos los mantenimientos
  *     tags: [Mantenimientos]
@@ -144,7 +144,7 @@ router.get('/', async (req, res) => {
 
 /**
  * @swagger
- * /api/mantenimientos/{id}:
+ * /api/mantenimiento/{id}:
  *   get:
  *     summary: Obtener mantenimiento por ID
  *     tags: [Mantenimientos]
@@ -185,7 +185,7 @@ router.get('/:id', async (req, res) => {
 
 /**
  * @swagger
- * /api/mantenimientos/luminaria/{luminaria_id}:
+ * /api/mantenimiento/luminaria/{luminaria_id}:
  *   get:
  *     summary: Obtener mantenimientos por ID de luminaria
  *     tags: [Mantenimientos]
@@ -221,7 +221,7 @@ router.get('/luminaria/:luminaria_id', async (req, res) => {
 
 /**
  * @swagger
- * /api/mantenimientos/responsable/{responsable_id}:
+ * /api/mantenimiento/responsable/{responsable_id}:
  *   get:
  *     summary: Obtener mantenimientos por ID de responsable
  *     tags: [Mantenimientos]
@@ -257,7 +257,7 @@ router.get('/responsable/:responsable_id', async (req, res) => {
 
 /**
  * @swagger
- * /api/mantenimientos/estatus/{estatus}:
+ * /api/mantenimiento/estatus/{estatus}:
  *   get:
  *     summary: Obtener mantenimientos por estatus
  *     tags: [Mantenimientos]
@@ -294,7 +294,7 @@ router.get('/estatus/:estatus', async (req, res) => {
 
 /**
  * @swagger
- * /api/mantenimientos:
+ * /api/mantenimiento:
  *   post:
  *     summary: Crear nuevo mantenimiento
  *     tags: [Mantenimientos]
@@ -371,7 +371,7 @@ router.post('/', async (req, res) => {
 
 /**
  * @swagger
- * /api/mantenimientos/{id}:
+ * /api/mantenimiento/{id}:
  *   put:
  *     summary: Actualizar mantenimiento
  *     tags: [Mantenimientos]
@@ -420,7 +420,7 @@ router.put('/:id', async (req, res) => {
 
 /**
  * @swagger
- * /api/mantenimientos/{id}:
+ * /api/mantenimiento/{id}:
  *   delete:
  *     summary: Eliminar mantenimiento
  *     tags: [Mantenimientos]
@@ -465,7 +465,7 @@ router.delete('/:id', async (req, res) => {
 
 /**
  * @swagger
- * /api/mantenimientos/estadisticas/general:
+ * /api/mantenimiento/estadisticas/general:
  *   get:
  *     summary: Obtener estadísticas generales de mantenimientos
  *     tags: [Mantenimientos]
