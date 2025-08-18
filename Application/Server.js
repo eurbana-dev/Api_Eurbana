@@ -23,12 +23,17 @@ const mantenimientoRouter = require('../Presentation/Mantenimiento/PresentationM
 // Configuración del servidor
 const app = express();
 const PORT = process.env.PORT || 3000;
-const HOST = process.env.HOST || 'localhost';
+
+// Si estamos en Docker o se pasa explícitamente HOST, escuchar en esa IP
+// Por defecto escuchamos en 0.0.0.0 para que Docker pueda exponer el puerto
+const HOST = process.env.HOST || '0.0.0.0';
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
 // Configuración de CORS
 const corsOptions = {
-    origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['http://localhost:3000', 'http://localhost:3001'],
+    origin: process.env.ALLOWED_ORIGINS
+        ? process.env.ALLOWED_ORIGINS.split(',')
+        : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     credentials: true,
@@ -41,21 +46,15 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Middleware de autenticación JWT
 const verificarToken = (req, res, next) => {
-    // Rutas que NO requieren autenticación
-    const rutasPublicas = [
-        '/api/auth/login',
-        '/api/usuarios/completo'
-    ];
+    const rutasPublicas = ['/api/auth/login', '/api/usuarios/completo'];
 
-    // Si es una ruta pública, continuar sin verificar token
     if (rutasPublicas.some(ruta => req.path === ruta)) {
         return next();
     }
 
-    // Verificar si es una ruta de API (que requiere autenticación)
     if (req.path.startsWith('/api/')) {
         const authHeader = req.headers.authorization;
-        
+
         if (!authHeader) {
             return res.status(401).json({
                 success: false,
@@ -63,8 +62,8 @@ const verificarToken = (req, res, next) => {
             });
         }
 
-        const token = authHeader.split(' ')[1]; // Bearer <token>
-        
+        const token = authHeader.split(' ')[1];
+
         if (!token) {
             return res.status(401).json({
                 success: false,
@@ -87,12 +86,10 @@ const verificarToken = (req, res, next) => {
             });
         }
     } else {
-        // Para rutas que no son de API, continuar sin verificar
         next();
     }
 };
 
-// Aplicar middleware de autenticación a todas las rutas
 app.use(verificarToken);
 
 // Documentación Swagger
@@ -104,9 +101,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
     }
 }));
 
-/**
- * Endpoint raíz de la API
- */
+// Endpoint raíz
 app.get('/', (req, res) => {
     res.json({
         success: true,
@@ -125,13 +120,10 @@ app.get('/', (req, res) => {
     });
 });
 
-/**
- * Endpoint de verificación de salud del sistema
- */
+// Health check
 app.get('/health', async (req, res) => {
     try {
         const memoryUsage = process.memoryUsage();
-        
         const healthStatus = {
             status: 'healthy',
             timestamp: new Date().toISOString(),
@@ -143,7 +135,6 @@ app.get('/health', async (req, res) => {
                 total: `${Math.round(memoryUsage.heapTotal / 1024 / 1024 * 100) / 100} MB`
             }
         };
-
         res.status(200).json(healthStatus);
     } catch (error) {
         console.error('[HEALTH] Error en health check:', error);
@@ -155,14 +146,14 @@ app.get('/health', async (req, res) => {
     }
 });
 
-// Configuración de rutas
+// Rutas de la API
 app.use('/api/auth', authRouter);
 app.use('/api/usuarios', usuarioRouter);
 app.use('/api/luminarias', luminariaRouter);
 app.use('/api/consumo', consumoRouter);
 app.use('/api/mantenimiento', mantenimientoRouter);
 
-// Middleware para rutas no encontradas
+// 404
 app.use((req, res) => {
     res.status(404).json({
         success: false,
@@ -170,11 +161,10 @@ app.use((req, res) => {
     });
 });
 
-// Middleware global de manejo de errores
+// Manejo de errores global
 app.use((error, req, res, next) => {
     console.error('[SERVER] Error no manejado:', error);
 
-    // Error de validación JSON
     if (error instanceof SyntaxError && error.status === 400 && 'body' in error) {
         return res.status(400).json({
             success: false,
@@ -183,7 +173,6 @@ app.use((error, req, res, next) => {
         });
     }
 
-    // Error de límite de tamaño
     if (error.code === 'LIMIT_FILE_SIZE') {
         return res.status(413).json({
             success: false,
@@ -192,7 +181,6 @@ app.use((error, req, res, next) => {
         });
     }
 
-    // Error genérico
     res.status(500).json({
         success: false,
         message: 'Error interno del servidor',
@@ -201,14 +189,13 @@ app.use((error, req, res, next) => {
     });
 });
 
-// Función para iniciar el servidor
+// Iniciar servidor
 const startServer = async () => {
     try {
-      
         console.log('Iniciando servidor EUrbana...');
         console.log(`Entorno: ${NODE_ENV}`);
         console.log(`CORS configurado para: ${corsOptions.origin}`);
-        
+
         const server = app.listen(PORT, HOST, () => {
             console.log('');
             console.log('===================================');
@@ -222,7 +209,6 @@ const startServer = async () => {
             console.log('=====================================');
         });
 
-        // Manejo de cierre graceful
         const gracefulShutdown = (signal) => {
             console.log(`\n Cerrando servidor...`);
             server.close(() => {
@@ -240,11 +226,9 @@ const startServer = async () => {
     }
 };
 
-
 if (require.main === module) {
     startServer();
 }
-
 
 module.exports = {
     app,
