@@ -1,6 +1,8 @@
 const path = require('path');
 const swaggerJSDoc = require('swagger-jsdoc');
 
+const PUBLIC_URL = process.env.PUBLIC_URL || '/';
+
 const options = {
   definition: {
     openapi: '3.0.0',
@@ -11,7 +13,7 @@ const options = {
     },
     servers: [
       {
-        url: 'http://localhost:3000',
+        url: PUBLIC_URL,
         description: 'Servidor de Desarrollo'
       }
     ],
