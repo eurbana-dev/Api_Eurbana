@@ -250,80 +250,130 @@ class InfrastructureLuminaria {
    * @param {Object} datos - Datos a actualizar
    * @returns {Promise<ModelLuminaria|null>} Luminaria actualizada o null
    */
-  async actualizarLuminaria(id, datos) {
-    const db = await EUrbana();
-    const col = db.collection(collectionName);
+async actualizarLuminaria(id, datos) {
+  const db = await EUrbana();
+  const col = db.collection(collectionName);
 
-    try {
-      const updateData = {};
-      
-      if (datos.identificador) updateData.identificador = datos.identificador;
-      if (datos.tipo_luminaria) updateData.tipo_luminaria = datos.tipo_luminaria;
-      if (datos.pais) updateData.pais = datos.pais;
-      if (datos.estado) updateData.estado = datos.estado;
-      if (datos.ciudad) updateData.ciudad = datos.ciudad;
-      if (datos.region) updateData.region = datos.region;
-      if (datos.coordenadas) {
-        updateData.coordenadas = {
+  try {
+    console.log(`ID recibido para actualizar: ${id}`); // Log del ID recibido
+    
+    // Validación robusta del ID
+    if (!id || !ObjectId.isValid(id)) {
+      throw new Error(`ID no válido: ${id}`);
+    }
+
+    const objectId = new ObjectId(id);
+    console.log(`ObjectId creado: ${objectId}`); // Log del ObjectId creado
+
+    // Verificar si existe la luminaria antes de actualizar
+    const existe = await col.findOne({ _id: objectId });
+    if (!existe) {
+      console.log(`Luminaria con ID ${id} no encontrada en la base de datos`);
+      throw new Error("Luminaria no encontrada");
+    }
+
+    // Preparar datos de actualización
+    const updateData = {};
+    
+    // Solo actualizar campos proporcionados
+    const campos = ['identificador', 'tipo_luminaria', 'pais', 'estado', 'ciudad', 'region', 'coordenadas', 'fecha_instalacion'];
+    campos.forEach(campo => {
+      if (datos[campo] !== undefined) {
+        updateData[campo] = campo === 'coordenadas' ? {
           lat: datos.coordenadas.lat,
           lng: datos.coordenadas.lng
-        };
+        } : campo === 'fecha_instalacion' ? new Date(datos.fecha_instalacion) : datos[campo];
       }
-      if (datos.fecha_instalacion) updateData.fecha_instalacion = new Date(datos.fecha_instalacion);
+    });
 
-      const result = await col.findOneAndUpdate(
-        { _id: new ObjectId(id) },
-        { $set: updateData },
-        { returnDocument: "after" }
-      );
+    console.log('Datos a actualizar:', updateData); // Log de los datos
 
-      const l = result.value;
-      if (!l) return null;
-      return new ModelLuminaria(
-        l._id,
-        l.identificador,
-        l.tipo_luminaria,
-        l.pais,
-        l.estado,
-        l.ciudad,
-        l.region,
-        l.coordenadas,
-        l.fecha_instalacion,
-        l.activo
-      );
-    } catch (error) {
-      console.error("Error al actualizar luminaria:", error);
-      return null;
+    // Realizar la actualización
+    const result = await col.findOneAndUpdate(
+      { _id: objectId },
+      { $set: updateData },
+      { 
+        returnDocument: 'after',
+        includeResultMetadata: true
+      }
+    );
+
+    console.log('Resultado de la actualización:', result); // Log completo del resultado
+
+    if (!result.value) {
+      throw new Error("No se pudo actualizar la luminaria");
     }
+
+    // Obtener el documento completo actualizado
+    const luminariaActualizada = await col.findOne({ _id: objectId });
+    
+    return new ModelLuminaria(
+      luminariaActualizada._id,
+      luminariaActualizada.identificador,
+      luminariaActualizada.tipo_luminaria,
+      luminariaActualizada.pais,
+      luminariaActualizada.estado,
+      luminariaActualizada.ciudad,
+      luminariaActualizada.region,
+      luminariaActualizada.coordenadas,
+      luminariaActualizada.fecha_instalacion,
+      luminariaActualizada.activo
+    );
+
+  } catch (error) {
+    console.error(`Error detallado al actualizar luminaria ${id}:`, {
+      error: error.message,
+      stack: error.stack,
+      receivedId: id,
+      receivedData: datos
+    });
+    throw error; // Re-lanzar el error para manejarlo en el servicio
   }
+}
 
-  /**
-   * Eliminar luminaria (soft delete)
-   * @param {string} id - ID de la luminaria
-   * @returns {Promise<boolean>} true si se eliminó correctamente
-   */
-  async eliminarLuminaria(id) {
-    const db = await EUrbana();
-    const col = db.collection(collectionName);
+/**
+ * Eliminar luminaria (soft delete)
+ * @param {string} id - ID de la luminaria
+ * @returns {Promise<boolean>} true si se eliminó correctamente
+ */
+async eliminarLuminaria(id) {
+  const db = await EUrbana();
+  const col = db.collection(collectionName);
 
-    try {
-      const result = await col.findOneAndUpdate(
-        { _id: new ObjectId(id) },
-        { $set: { activo: false } }
-      );
-
-      return result.ok === 1;
-    } catch (error) {
-      console.error("Error al eliminar luminaria:", error);
-      return false;
+  try {
+    // 1. Validar que el ID tenga formato válido
+    if (!ObjectId.isValid(id)) {
+      throw new Error("ID de luminaria no válido");
     }
-  }
 
-  /**
-   * Obtener estadísticas de luminarias
-   * @returns {Promise<Object|null>} Estadísticas generales
-   */
-  async obtenerEstadisticasLuminarias() {
+    // 2. Ejecutar eliminación lógica (soft delete)
+    const result = await col.findOneAndUpdate(
+      { _id: new ObjectId(id) },
+      { $set: { activo: false } },
+      { 
+        returnOriginal: false, // Retorna el documento después de actualizar
+        projection: { _id: 1 } // Solo retorna el ID para verificar
+      }
+    );
+
+    // 3. Verificar resultado
+    if (!result.value) {
+      throw new Error("Luminaria no encontrada");
+    }
+
+    // 4. Retornar confirmación
+    return true;
+
+  } catch (error) {
+    console.error(`Error al eliminar luminaria ID ${id}:`, error.message);
+    return false;
+  }
+}
+/**
+ * Obtener estadísticas de luminarias
+ * @returns {Promise<Object|null>} Estadísticas generales
+ */
+async obtenerEstadisticasLuminarias() {
     const db = await EUrbana();
     const col = db.collection(collectionName);
 
