@@ -2,8 +2,6 @@
  * @fileoverview Server.js - Servidor principal de la API EUrbana
  * @description Configuración del servidor Express con todas las rutas, middlewares y documentación Swagger
  * @version 1.0.0
- * @author Sistema EUrbana
- * @date 2025
  */
 
 const express = require('express');
@@ -23,67 +21,39 @@ const mantenimientoRouter = require('../Presentation/Mantenimiento/PresentationM
 // Configuración del servidor
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-// Si estamos en Docker o se pasa explícitamente HOST, escuchar en esa IP
-// Por defecto escuchamos en 0.0.0.0 para que Docker pueda exponer el puerto
 const HOST = process.env.HOST || '0.0.0.0';
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
-// Configuración de CORS
-const corsOptions = {
-    origin: process.env.ALLOWED_ORIGINS
-        ? process.env.ALLOWED_ORIGINS.split(',')
-        : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'],
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-    credentials: true,
-};
+// ================== CORS ==================
+// Permitir cualquier origen
+app.use(cors()); // ⚡ Permite solicitudes desde cualquier dominio
 
 // Middlewares básicos
-app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Middleware de autenticación JWT
+// ================== Autenticación JWT ==================
 const verificarToken = (req, res, next) => {
     const rutasPublicas = ['/api/auth/login', '/api/usuarios/completo'];
 
-    if (rutasPublicas.some(ruta => req.path === ruta)) {
-        return next();
-    }
+    if (rutasPublicas.some(ruta => req.path === ruta)) return next();
 
     if (req.path.startsWith('/api/')) {
         const authHeader = req.headers.authorization;
-
-        if (!authHeader) {
-            return res.status(401).json({
-                success: false,
-                message: 'Token de autorización requerido'
-            });
-        }
+        if (!authHeader) return res.status(401).json({ success: false, message: 'Token de autorización requerido' });
 
         const token = authHeader.split(' ')[1];
-
-        if (!token) {
-            return res.status(401).json({
-                success: false,
-                message: 'Formato de token inválido. Use: Bearer <token>'
-            });
-        }
+        if (!token) return res.status(401).json({ success: false, message: 'Formato de token inválido. Use: Bearer <token>' });
 
         try {
             const jwtSecret = process.env.JWT_SECRET;
-            if (!jwtSecret) {
-                throw new Error('JWT_SECRET no está configurado en las variables de entorno');
-            }
+            if (!jwtSecret) throw new Error('JWT_SECRET no está configurado en las variables de entorno');
+
             const payload = jwt.verify(token, jwtSecret);
             req.usuario = payload;
             next();
         } catch (error) {
-            return res.status(401).json({
-                success: false,
-                message: 'Token inválido o expirado'
-            });
+            return res.status(401).json({ success: false, message: 'Token inválido o expirado' });
         }
     } else {
         next();
@@ -92,16 +62,14 @@ const verificarToken = (req, res, next) => {
 
 app.use(verificarToken);
 
-// Documentación Swagger
+// ================== Documentación Swagger ==================
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
     explorer: true,
     customSiteTitle: "API EUrbana - Documentación",
-    swaggerOptions: {
-        persistAuthorization: true,
-    }
+    swaggerOptions: { persistAuthorization: true }
 }));
 
-// Endpoint raíz
+// ================== Endpoints ==================
 app.get('/', (req, res) => {
     res.json({
         success: true,
@@ -138,15 +106,11 @@ app.get('/health', async (req, res) => {
         res.status(200).json(healthStatus);
     } catch (error) {
         console.error('[HEALTH] Error en health check:', error);
-        res.status(503).json({
-            status: 'unhealthy',
-            timestamp: new Date().toISOString(),
-            error: 'Sistema no disponible'
-        });
+        res.status(503).json({ status: 'unhealthy', timestamp: new Date().toISOString(), error: 'Sistema no disponible' });
     }
 });
 
-// Rutas de la API
+// ================== Rutas de la API ==================
 app.use('/api/auth', authRouter);
 app.use('/api/usuarios', usuarioRouter);
 app.use('/api/luminarias', luminariaRouter);
@@ -155,10 +119,7 @@ app.use('/api/mantenimiento', mantenimientoRouter);
 
 // 404
 app.use((req, res) => {
-    res.status(404).json({
-        success: false,
-        message: `Ruta ${req.method} ${req.path} no encontrada`,
-    });
+    res.status(404).json({ success: false, message: `Ruta ${req.method} ${req.path} no encontrada` });
 });
 
 // Manejo de errores global
@@ -166,19 +127,11 @@ app.use((error, req, res, next) => {
     console.error('[SERVER] Error no manejado:', error);
 
     if (error instanceof SyntaxError && error.status === 400 && 'body' in error) {
-        return res.status(400).json({
-            success: false,
-            message: 'JSON inválido en el cuerpo de la solicitud',
-            error: 'Syntax Error'
-        });
+        return res.status(400).json({ success: false, message: 'JSON inválido en el cuerpo de la solicitud', error: 'Syntax Error' });
     }
 
     if (error.code === 'LIMIT_FILE_SIZE') {
-        return res.status(413).json({
-            success: false,
-            message: 'El archivo enviado es demasiado grande',
-            error: 'File Too Large'
-        });
+        return res.status(413).json({ success: false, message: 'El archivo enviado es demasiado grande', error: 'File Too Large' });
     }
 
     res.status(500).json({
@@ -189,12 +142,12 @@ app.use((error, req, res, next) => {
     });
 });
 
-// Iniciar servidor
+// ================== Iniciar servidor ==================
 const startServer = async () => {
     try {
         console.log('Iniciando servidor EUrbana...');
         console.log(`Entorno: ${NODE_ENV}`);
-        console.log(`CORS configurado para: ${corsOptions.origin}`);
+        console.log('CORS habilitado para cualquier origen');
 
         const server = app.listen(PORT, HOST, () => {
             console.log('');
@@ -210,10 +163,8 @@ const startServer = async () => {
         });
 
         const gracefulShutdown = (signal) => {
-            console.log(`\n Cerrando servidor...`);
-            server.close(() => {
-                process.exit(0);
-            });
+            console.log(`\nCerrando servidor...`);
+            server.close(() => process.exit(0));
         };
 
         process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
@@ -230,7 +181,4 @@ if (require.main === module) {
     startServer();
 }
 
-module.exports = {
-    app,
-    startServer
-};
+module.exports = { app, startServer };
